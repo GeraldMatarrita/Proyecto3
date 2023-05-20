@@ -1,6 +1,7 @@
 English:
 
 For its correct operation, three environment variables must be added to the system Path (at least in Windows). These variables are the following.
+
 C:\Program Files\swipl\bin
 C:\Program Files\swipl\lib\jpl.jar
 C:\Program Files\swipl\bin\jpl.dll
