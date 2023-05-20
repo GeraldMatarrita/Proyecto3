@@ -65,31 +65,44 @@ public class MenuServicioAlCliente {
     public void mostrarSolucion(String dispositivo, String problema) {
         System.out.println("==== Solución ====");
         System.out.println("Posible solución para el problema \"" + problema.replace("'", "") + "\":");
-//        Queue<String> solucionesQueue = menu.get(dispositivo).get(problema);
 
-        Query consultaSoluciones = new Query("solucion(" + problema + ", Soluciones)");
-        if (consultaSoluciones.hasSolution()) {
-            Term soluciones = consultaSoluciones.oneSolution().get("Soluciones");
-            if (soluciones.isList()) {
-                Term[] solucionesArray = soluciones.toTermArray();
-                if (solucionesArray.length > 0) {
-                    System.out.println(solucionesArray[0].toString().replace("'", ""));
+        if (dispositivo.equals("'Telefono'") && problema.equals("'Pantalla rota'")) {
+            Query consultaPasos = new Query("solucion_recursiva('Pantalla rota')");
+            if (consultaPasos.hasSolution()) {
+                System.out.println("Pasos para solucionar el problema \"" + problema.replace("'", "") + "\":");
+                Arrays.stream(consultaPasos.allSolutions()).forEach(solution -> {
+                    Term pasos = solution.get("Problema");
+                    System.out.println(pasos.toString().replace("'", ""));
+                });
+            }
+            System.out.println("Presione cualquier tecla para continuar");
+            scanner.nextLine();
+            mostrarMenuPrincipal();
+        } else {
+            Query consultaSoluciones = new Query("solucion(" + problema + ", Soluciones)");
+            if (consultaSoluciones.hasSolution()) {
+                Term soluciones = consultaSoluciones.oneSolution().get("Soluciones");
+                if (soluciones.isList()) {
+                    Term[] solucionesArray = soluciones.toTermArray();
+                    if (solucionesArray.length > 0) {
+                        System.out.println(solucionesArray[0].toString().replace("'", ""));
 
-                    System.out.println("¿Funcionó la solución? (S/N)");
-                    String respuesta = scanner.nextLine().trim().toLowerCase();
+                        System.out.println("¿Funcionó la solución? (S/N)");
+                        String respuesta = scanner.nextLine().trim().toLowerCase();
 
-                    if (respuesta.equals("s")) {
-                        mostrarMenuPrincipal();
-                    } else if (respuesta.equals("n")) {
-                        if (solucionesArray.length > 1) {
-                            mostrarSolucionesRestantes(dispositivo, problema, Arrays.copyOfRange(solucionesArray, 1, solucionesArray.length));
-                        } else {
-                            System.out.println("No hay más soluciones para el problema \"" + problema.replace("'", "") + "\"");
+                        if (respuesta.equals("s")) {
                             mostrarMenuPrincipal();
+                        } else if (respuesta.equals("n")) {
+                            if (solucionesArray.length > 1) {
+                                mostrarSolucionesRestantes(dispositivo, problema, Arrays.copyOfRange(solucionesArray, 1, solucionesArray.length));
+                            } else {
+                                System.out.println("No hay más soluciones para el problema \"" + problema.replace("'", "") + "\"");
+                                mostrarMenuPrincipal();
+                            }
+                        } else {
+                            System.out.println("Respuesta inválida. Intente nuevamente.");
+                            mostrarSolucion(dispositivo, problema);
                         }
-                    } else {
-                        System.out.println("Respuesta inválida. Intente nuevamente.");
-                        mostrarSolucion(dispositivo, problema);
                     }
                 }
             }
@@ -104,10 +117,10 @@ public class MenuServicioAlCliente {
             System.out.println("¿Funcionó la solución? (S/N)");
             String respuesta = scanner.nextLine().trim().toLowerCase();
 
-            if (respuesta.equals("s")){
+            if (respuesta.equals("s")) {
                 mostrarMenuPrincipal();
-            } else if (respuesta.equals("n")){
-                if (solucionesRestantes.length > 1){
+            } else if (respuesta.equals("n")) {
+                if (solucionesRestantes.length > 1) {
                     mostrarSolucionesRestantes(dispositivo, problema, Arrays.copyOfRange(solucionesRestantes, 1, solucionesRestantes.length));
                 } else {
                     System.out.println("No hay más soluciones para el problema \"" + problema.replace("'", "") + "\"");
@@ -119,7 +132,6 @@ public class MenuServicioAlCliente {
             }
         }
     }
-
 
     public int leerOpcion(int maxOpciones) {
         while (true) {
