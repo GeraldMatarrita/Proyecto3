@@ -1,56 +1,62 @@
+import org.jpl7.Query;
+import org.jpl7.Term;
+
 import java.util.*;
 
 public class MenuServicioAlCliente {
-
-    private Map<String, Map<String, Queue<String>>> menu;
     private Scanner scanner;
+    private Query consult;
 
     public MenuServicioAlCliente() {
-        menu = new HashMap<>();
+
+        consult = new Query("consult('proyecto3.pl')");
+
+        System.out.println(consult.hasSolution() ? "Base de conocimiento cargada con éxito"
+                : "Error al cargar la base de conocimiento");
+
         this.scanner = new Scanner(System.in);
-        //Agregar opciones al menú
-        agregarOpcion("Teléfono", "No enciende", Arrays.asList("Cargue el teléfono", "Reemplace la batería"));
-        agregarOpcion("Teléfono", "Pantalla rota", Arrays.asList("Reemplace la pantalla", "Visite un centro de servicio"));
-        agregarOpcion("Teléfono", "Batería descargada", Collections.singletonList("Cargue la batería"));
-        agregarOpcion("Tableta", "No se conecta a Wi-Fi", Arrays.asList("Reinicie el enrutador", "Verifique la configuración de Wi-Fi"));
-        agregarOpcion("Tableta", "No carga", Arrays.asList("Reemplace el cable de carga", "Verifique el puerto de carga"));
-        agregarOpcion("Tableta", "Lento", Arrays.asList("Libere espacio de almacenamiento", "Realice un reinicio de fábrica"));
-
         mostrarMenuPrincipal();
-    }
-
-    public void agregarOpcion(String dispositivo, String problema, List<String> soluciones) {
-        if (!menu.containsKey(dispositivo)) {
-            menu.put(dispositivo, new HashMap<>());
-        }
-        Queue<String> solucionesQueue = new LinkedList<>(soluciones);
-        menu.get(dispositivo).put(problema, solucionesQueue);
     }
 
     public void mostrarMenuPrincipal() {
         System.out.println("==== Menú de Servicio al Cliente ====");
         System.out.println("Seleccione un dispositivo:");
+
         int opcion = 1;
-        for (String dispositivo : menu.keySet()) {
-            System.out.println(opcion + ". " + dispositivo);
+        Query consultaDispositivos = new Query("dispositivo(Dispositivo)");
+        while (consultaDispositivos.hasMoreSolutions()) {
+            Term dispositivo = consultaDispositivos.nextSolution().get("Dispositivo");
+            String disposivoString = dispositivo.toString().replace("'", "");
+            System.out.println(opcion + ". " + disposivoString);
             opcion++;
         }
-        int dispositivoSeleccionado = leerOpcion(menu.size());
+        System.out.println("\n" + opcion + ". Salir");
 
+        int dispositivoSeleccionado = leerOpcion(new Query("dispositivo(Dispositivo)").allSolutions().length);
+
+        if (dispositivoSeleccionado == new Query("dispositivo(Dispositivo)").allSolutions().length + 1) {
+            System.out.println("Gracias por usar el servicio al cliente");
+            return;
+        }
         String dispositivo = getDispositivoPorIndice(dispositivoSeleccionado);
+
         mostrarMenuProblemas(dispositivo);
     }
 
     public void mostrarMenuProblemas(String dispositivo) {
         System.out.println("==== Menú de Problemas ====");
-        System.out.println("Seleccione un problema para el " + dispositivo + ":");
+        System.out.println("Seleccione un problema para el " + dispositivo.replace("'", "") + ":");
         int opcion = 1;
-        Map<String, Queue<String>> problemas = menu.get(dispositivo);
-        for (String problema : problemas.keySet()) {
-            System.out.println(opcion + ". " + problema);
+
+        Query consultaProblemas = new Query("problema(" + dispositivo + ", Problema)");
+        while (consultaProblemas.hasMoreSolutions()) {
+            Term problema = consultaProblemas.nextSolution().get("Problema");
+            String problemaString = problema.toString().replace("'", "");
+            System.out.println(opcion + ". " + problemaString);
             opcion++;
         }
-        int problemaSeleccionado = leerOpcion(problemas.size());
+
+        int problemaSeleccionado = leerOpcion(new Query("problema(" + dispositivo + ", Problema)").allSolutions().length);
 
         String problema = getProblemaPorIndice(dispositivo, problemaSeleccionado);
         mostrarSolucion(dispositivo, problema);
@@ -58,34 +64,68 @@ public class MenuServicioAlCliente {
 
     public void mostrarSolucion(String dispositivo, String problema) {
         System.out.println("==== Solución ====");
-        System.out.println("Posible solución para el problema \"" + problema + "\":");
-        Queue<String> solucionesQueue = menu.get(dispositivo).get(problema);
-        String solucion = solucionesQueue.poll();
-        System.out.println(solucion);
-        System.out.println("¿Funcionó la solución? (S/N)");
-        String respuesta = scanner.nextLine().trim().toLowerCase();
-        if (solucionesQueue.isEmpty()) {
-            System.out.println("------------------------------------");
-            System.out.println("No hay más soluciones para este problema.");
-            System.out.println("------------------------------------\n");
-            mostrarMenuPrincipal();
-        } else {
-            if (respuesta.equals("s")) {
-                mostrarMenuPrincipal();
-            } else if (respuesta.equals("n")){
-                mostrarSolucion(dispositivo, problema);
-            } else {
-                System.out.println("Respuesta inválida. Intente nuevamente.");
-                mostrarSolucion(dispositivo, problema);
+        System.out.println("Posible solución para el problema \"" + problema.replace("'", "") + "\":");
+//        Queue<String> solucionesQueue = menu.get(dispositivo).get(problema);
+
+        Query consultaSoluciones = new Query("solucion(" + problema + ", Soluciones)");
+        if (consultaSoluciones.hasSolution()) {
+            Term soluciones = consultaSoluciones.oneSolution().get("Soluciones");
+            if (soluciones.isList()) {
+                Term[] solucionesArray = soluciones.toTermArray();
+                if (solucionesArray.length > 0) {
+                    System.out.println(solucionesArray[0].toString().replace("'", ""));
+
+                    System.out.println("¿Funcionó la solución? (S/N)");
+                    String respuesta = scanner.nextLine().trim().toLowerCase();
+
+                    if (respuesta.equals("s")) {
+                        mostrarMenuPrincipal();
+                    } else if (respuesta.equals("n")) {
+                        if (solucionesArray.length > 1) {
+                            mostrarSolucionesRestantes(dispositivo, problema, Arrays.copyOfRange(solucionesArray, 1, solucionesArray.length));
+                        } else {
+                            System.out.println("No hay más soluciones para el problema \"" + problema.replace("'", "") + "\"");
+                            mostrarMenuPrincipal();
+                        }
+                    } else {
+                        System.out.println("Respuesta inválida. Intente nuevamente.");
+                        mostrarSolucion(dispositivo, problema);
+                    }
+                }
             }
         }
     }
+
+    public void mostrarSolucionesRestantes(String dispositivo, String problema, Term[] solucionesRestantes) {
+        if (solucionesRestantes.length > 0) {
+            System.out.println(solucionesRestantes[0].toString().replace("'", ""));
+
+            System.out.println("==== Solución ====");
+            System.out.println("¿Funcionó la solución? (S/N)");
+            String respuesta = scanner.nextLine().trim().toLowerCase();
+
+            if (respuesta.equals("s")){
+                mostrarMenuPrincipal();
+            } else if (respuesta.equals("n")){
+                if (solucionesRestantes.length > 1){
+                    mostrarSolucionesRestantes(dispositivo, problema, Arrays.copyOfRange(solucionesRestantes, 1, solucionesRestantes.length));
+                } else {
+                    System.out.println("No hay más soluciones para el problema \"" + problema.replace("'", "") + "\"");
+                    mostrarMenuPrincipal();
+                }
+            } else {
+                System.out.println("Respuesta inválida. Intente nuevamente.");
+                mostrarSolucionesRestantes(dispositivo, problema, solucionesRestantes);
+            }
+        }
+    }
+
 
     public int leerOpcion(int maxOpciones) {
         while (true) {
             try {
                 int opcion = Integer.parseInt(scanner.nextLine());
-                if (opcion >= 1 && opcion <= maxOpciones) {
+                if (opcion >= 1 && opcion <= maxOpciones + 1) {
                     return opcion;
                 }
                 System.out.println("Opción inválida. Intente nuevamente.");
@@ -97,24 +137,29 @@ public class MenuServicioAlCliente {
 
     public String getDispositivoPorIndice(int indice) {
         int contador = 1;
-        for (String dispositivo : menu.keySet()) {
+        Query consultaDispositivos = new Query("dispositivo(Dispositivo)");
+        while (consultaDispositivos.hasMoreSolutions()) {
+            Term dispositivo = consultaDispositivos.nextSolution().get("Dispositivo");
             if (contador == indice) {
-                return dispositivo;
+                return dispositivo.toString();
             }
             contador++;
         }
+
         return null;
     }
 
     public String getProblemaPorIndice(String dispositivo, int indice) {
         int contador = 1;
-        Map<String, Queue<String>> problemas = menu.get(dispositivo);
-        for (String problema : problemas.keySet()) {
+        Query consultaProblemas = new Query("problema(" + dispositivo + ", Problema)");
+        while (consultaProblemas.hasMoreSolutions()) {
+            Term problema = consultaProblemas.nextSolution().get("Problema");
             if (contador == indice) {
-                return problema;
+                return problema.toString();
             }
             contador++;
         }
+
         return null;
     }
 }
