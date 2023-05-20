@@ -3,7 +3,7 @@ English:
 For its correct operation, three environment variables must be added to the system Path (at least in Windows). These variables are the following. \
 C:\Program Files\swipl\bin \
 C:\Program Files\swipl\lib\jpl.jar <br>
-C:\Program Files\swipl\bin\jpl.dll \
+C:\Program Files\swipl\bin\jpl.dll <br>
 
 Note: Directories may vary depending on where swi-prolog is installed.
 In addition, the jpl.jar library must be added to the project. Which is located in ..\swipl\lib\jpl.jar.
