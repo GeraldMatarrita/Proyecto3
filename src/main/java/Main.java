@@ -1,5 +1,10 @@
+/*
+   Clase Main
+ */
 public class Main {
+
+    // Método main
     public static void main(String[] args) {
-        MenuServicioAlCliente menuServicioCliente = new MenuServicioAlCliente();
+        MenuSoporteTecnico menuServicioCliente = new MenuSoporteTecnico();
     }
 }
