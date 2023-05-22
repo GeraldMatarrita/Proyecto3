@@ -18,7 +18,7 @@ public class MenuSoporteTecnico {
     public MenuSoporteTecnico() {
 
         // Inicializa la consulta a la base de conocimiento
-        consult = new Query("consult('proyecto3.pl')");
+        consult = new Query("consult('proyecto3_ejercicio2.pl')");
 
         // Muestra un mensaje de éxito o error al cargar la base de conocimiento
         System.out.println(consult.hasSolution() ? "Base de conocimiento cargada con éxito"
